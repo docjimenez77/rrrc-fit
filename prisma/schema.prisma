@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        String       @id @default(cuid())
+  name      String
+  email     String?      @unique
+  createdAt DateTime     @default(now())
+  sessions  FitSession[]
+}
+
+model Customer {
+  id           String       @id @default(cuid())
+  firstName    String
+  lastName     String
+  phone        String?
+  email        String?      @unique
+  lightspeedId String?      @unique
+  createdAt    DateTime     @default(now())
+  sessions     FitSession[]
+}
+
+model Brand {
+  id      String     @id @default(cuid())
+  name    String     @unique
+  models  ShoeModel[]
+}
+
+model ShoeModel {
+  id       String      @id @default(cuid())
+  name     String
+  brandId  String?
+  brand    Brand?      @relation(fields: [brandId], references: [id])
+  tried    ShoeTried[]
+  upcs     ProductUPC[]
+}
+
+model FitSession {
+  id         String      @id @default(cuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  customerId String?
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  createdAt  DateTime    @default(now())
+  notes      String?
+  shoes      ShoeTried[]
+}
+
+model ShoeTried {
+  id           String      @id @default(cuid())
+  fitSessionId String
+  fitSession   FitSession  @relation(fields: [fitSessionId], references: [id])
+  shoeModelId  String?
+  shoeModel    ShoeModel?  @relation(fields: [shoeModelId], references: [id])
+  modelName    String
+  size         String
+  width        String
+  rating       Int
+  notes        String?
+}
+
+model ProductUPC {
+  id          String   @id @default(cuid())
+  upc         String   @unique
+  description String?
+  size        String?
+  width       String?
+  modelName   String?
+  brand       String?
+  imageUrl    String?
+  metadata    Json?
+  shoeModelId String?
+  shoeModel   ShoeModel? @relation(fields: [shoeModelId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
