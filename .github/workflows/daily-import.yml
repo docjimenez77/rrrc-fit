@@ -1,0 +1,47 @@
+# .github/workflows/daily-import.yml
+name: Daily Optio Import
+
+on:
+  schedule:
+    # Runs every day at 03:00 UTC. Change cron if you prefer a different time.
+    - cron: '0 3 * * *'
+  workflow_dispatch: {} # allows manual runs
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma generate
+
+      - name: Run Optio importer
+        env:
+          # Required: set this secret in your repository settings to point at your DB.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Optional: set OPTIO_FEED_URL secret if you want to override the default feed.
+          OPTIO_FEED_URL: ${{ secrets.OPTIO_FEED_URL }}
+        run: |
+          # echo start time for logs
+          echo "Starting importer at $(date -u)"
+          node scripts/import-optio.js
+          echo "Importer finished at $(date -u)"
+
+      - name: Upload run log (artifact)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: optio-import-log-${{ github.run_id }}
+          path: .
