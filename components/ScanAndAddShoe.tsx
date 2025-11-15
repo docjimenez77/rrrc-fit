@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 
-export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }) {
-  const inputRef = useRef(null);
+type ScanProps = {
+  onAddShoe: (shoe: any) => void;
+  focusOnMount?: boolean;
+};
+
+export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (focusOnMount && inputRef.current) inputRef.current.focus();
