@@ -131,13 +131,21 @@ export default function FitPage() {
             sizeEl.dispatchEvent(new Event('input', { bubbles: true }));
           }
           if (widthEl) {
-            if (widthEl.tagName.toLowerCase() === 'select') {
+            if (widthEl instanceof HTMLSelectElement) {
               const opt = Array.from(widthEl.options).find(o => (o.text||o.value).trim() === (data.width || '').trim());
               if (opt) { widthEl.value = opt.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
               else { widthEl.value = data.width || widthEl.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
+            } else if (widthEl instanceof HTMLInputElement) {
+              widthEl.value = data.width || '';
+              widthEl.dispatchEvent(new Event('input', { bubbles: true }));
             } else {
-              (widthEl as HTMLInputElement).value = data.width || '';
-              (widthEl as HTMLInputElement).dispatchEvent(new Event('input', { bubbles: true }));
+              // fallback for unexpected element types
+              try {
+                (widthEl as any).value = data.width || '';
+                (widthEl as any).dispatchEvent(new Event('input', { bubbles: true }));
+              } catch (e) {
+                // ignore if cannot set value
+              }
             }
           }
           return true;
