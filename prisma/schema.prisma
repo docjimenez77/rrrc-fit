@@ -62,7 +62,8 @@ model ShoeTried {
   size         String
   width        String
   rating       Int
-  selected     Boolean     @default(false)\n  notes        String?
+  selected     Boolean     @default(false)
+  notes        String?
 }
 
 model ProductUPC {
