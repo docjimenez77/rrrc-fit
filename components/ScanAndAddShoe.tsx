@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 
 type ScanProps = {
   onAddShoe: (shoe: any) => void;
@@ -61,10 +61,10 @@ export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanP
         ref={inputRef}
         aria-label="Scan UPC"
         placeholder="Scan UPC here"
-        onKeyDown={(e) => {
+        onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Enter') {
-            handleEnter(e.target.value);
-            e.target.value = '';
+            handleEnter((e.currentTarget as HTMLInputElement).value);
+            (e.currentTarget as HTMLInputElement).value = '';
           }
         }}
         style={{
