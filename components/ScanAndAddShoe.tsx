@@ -12,7 +12,7 @@ export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanP
     if (focusOnMount && inputRef.current) inputRef.current.focus();
   }, [focusOnMount]);
 
-  async function lookupUpc(upc) {
+  async function lookupUpc(upc: string) {
     const res = await fetch('/api/upc/' + upc);
     if (!res.ok) {
       const text = await res.text().catch(()=>res.statusText);
@@ -23,7 +23,7 @@ export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanP
     return res.json();
   }
 
-  async function handleEnter(raw) {
+  async function handleEnter(raw: string) {
     const upc = String(raw || '').replace(/\D/g, '');
     if (!upc) return;
     try {
