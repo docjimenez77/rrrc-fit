@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ScanAndAddShoe from '../../components/ScanAndAddShoe'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -72,6 +72,110 @@ export default function FitPage() {
     setShoes((list) => list.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)))
   }
 
+
+  useEffect(() => {
+    try {
+      const id = '__rrrc_upc_scan';
+      if (document.getElementById(id)) return;
+      const input = document.createElement('input');
+      input.id = id;
+      input.placeholder = 'Scan UPC here';
+      Object.assign(input.style, {
+        position: 'fixed', top: '8px', right: '8px', zIndex: 2147483647,
+        padding: '8px 12px', fontSize: '14px', width: '340px', borderRadius: '6px',
+        border: '1px solid rgba(0,0,0,0.15)', background: '#fff'
+      });
+      document.body.appendChild(input);
+      input.focus();
+
+      async function lookup(upc: string) {
+        const res = await fetch('/api/upc/' + upc);
+        if (!res.ok) {
+          if (res.status === 404) throw { status: 404 };
+          const txt = await res.text().catch(()=>res.statusText);
+          throw new Error('Lookup failed: ' + res.status + ' ' + txt);
+        }
+        return res.json();
+      }
+
+      async function addShoeToForm(data: any) {
+        const addBtn = Array.from(document.querySelectorAll('button')).find(b => /add shoe/i.test(b.textContent || '') );
+        if (addBtn) {
+          addBtn.click();
+          await new Promise(r=>setTimeout(r,200));
+          const modelInputs = Array.from(document.querySelectorAll('input[placeholder], textarea'))
+            .filter((el) => {
+              const ph = (el.getAttribute('placeholder')||'').toLowerCase();
+              return /model|model name|e\\.g\\.,/i.test(ph) || /model/i.test((el as HTMLInputElement).name||'');
+            }) as HTMLInputElement[];
+          const sizeInputs = Array.from(document.querySelectorAll('input'))
+            .filter((el) => {
+              const ph=(el.getAttribute('placeholder')||'').toLowerCase();
+              return ph.includes('size') || /size/i.test((el as HTMLInputElement).name||'');
+            }) as HTMLInputElement[];
+          const widthSelects = Array.from(document.querySelectorAll('select'))
+            .filter((el)=> {
+              return (el.getAttribute('placeholder')||'').toLowerCase().includes('width') || /width/i.test((el as HTMLSelectElement).name||'');
+            }) as HTMLSelectElement[];
+
+          const modelEl = modelInputs[modelInputs.length-1] || modelInputs[0] || null;
+          const sizeEl = sizeInputs[sizeInputs.length-1] || sizeInputs[0] || null;
+          const widthEl = widthSelects[widthSelects.length-1] || widthSelects[0] || null;
+
+          if (modelEl) {
+            modelEl.value = data.modelName || data.description || '';
+            modelEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (sizeEl) {
+            sizeEl.value = data.size || '';
+            sizeEl.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (widthEl) {
+            if (widthEl.tagName.toLowerCase() === 'select') {
+              const opt = Array.from(widthEl.options).find(o => (o.text||o.value).trim() === (data.width || '').trim());
+              if (opt) { widthEl.value = opt.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
+              else { widthEl.value = data.width || widthEl.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
+            } else {
+              (widthEl as HTMLInputElement).value = data.width || '';
+              (widthEl as HTMLInputElement).dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
+          return true;
+        }
+        return false;
+      }
+
+      input.addEventListener('keydown', async (e: KeyboardEvent) => {
+        if ((e as KeyboardEvent).key !== 'Enter') return;
+        const raw = (input as HTMLInputElement).value || '';
+        const upc = raw.replace(/\\D/g,'');
+        if (!upc) { alert('No digits found'); return; }
+        (input as HTMLInputElement).value = '';
+        try {
+          const data = await lookup(upc);
+          const ok = await addShoeToForm(data);
+          if (ok) {
+            input.style.background = '#d1fae5';
+            setTimeout(()=> input.style.background = '', 300);
+          } else {
+            alert('UPC found but auto-fill did not match the page layout.');
+          }
+        } catch (err) {
+          if ((err as any).status === 404) alert('UPC not in catalog: ' + upc);
+          else { console.error(err); alert('Lookup error — see console'); }
+        }
+      });
+
+      // cleanup when component unmounts
+      // note: FitPage is client-side persistent but we still return cleanup
+      return () => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      };
+    } catch (e) {
+      console.error('Scan init error', e);
+    }
+  }, []);
   const filteredCustomers = SAMPLE_CUSTOMERS.filter((c) => {
     const hay = `${c.firstName} ${c.lastName} ${c.phone} ${c.email}`.toLowerCase()
     return hay.includes(customerQuery.trim().toLowerCase())
