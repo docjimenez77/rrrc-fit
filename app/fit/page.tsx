@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import ScanAndAddShoe from 'components/ScanAndAddShoe'
 import { v4 as uuidv4 } from 'uuid'
 
 type ShoeTried = {
