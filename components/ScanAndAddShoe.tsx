@@ -46,7 +46,7 @@ export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanP
         setTimeout(()=>{ if(inputRef.current) inputRef.current.style.background=''; }, 300);
       }
     } catch (err) {
-      if (err.status === 404) {
+      if ((err as any).status === 404) {
         alert('UPC not found — please add shoe manually.');
       } else {
         console.error('UPC lookup error', err);
