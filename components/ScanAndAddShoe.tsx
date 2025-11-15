@@ -17,7 +17,7 @@ export default function ScanAndAddShoe({ onAddShoe, focusOnMount = true }: ScanP
     if (!res.ok) {
       const text = await res.text().catch(()=>res.statusText);
       const err = new Error(text || ('status ' + res.status));
-      err.status = res.status;
+      (err as any).status = res.status;
       throw err;
     }
     return res.json();
