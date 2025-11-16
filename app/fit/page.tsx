@@ -98,71 +98,26 @@ export default function FitPage() {
         return res.json();
       }
 
-      async function addShoeToForm(data: any) {
-        const addBtn = Array.from(document.querySelectorAll('button')).find(b => /add shoe/i.test(b.textContent || '') );
-        if (addBtn) {
-          addBtn.click();
-          await new Promise(r=>setTimeout(r,200));
-          const modelInputs = Array.from(document.querySelectorAll('input[placeholder], textarea'))
-            .filter((el) => {
-              const ph = (el.getAttribute('placeholder')||'').toLowerCase();
-              return /model|model name|e\\.g\\.,/i.test(ph) || /model/i.test((el as HTMLInputElement).name||'');
-            }) as HTMLInputElement[];
-          const sizeInputs = Array.from(document.querySelectorAll('input'))
-            .filter((el) => {
-              const ph=(el.getAttribute('placeholder')||'').toLowerCase();
-              return ph.includes('size') || /size/i.test((el as HTMLInputElement).name||'');
-            }) as HTMLInputElement[];
-          const widthSelects = Array.from(document.querySelectorAll('select'))
-            .filter((el)=> {
-              return (el.getAttribute('placeholder')||'').toLowerCase().includes('width') || /width/i.test((el as HTMLSelectElement).name||'');
-            }) as HTMLSelectElement[];
+      
+async function addShoeToForm(data: any) {
+  // Add the scanned shoe into React state so controlled inputs render correctly.
+  try {
+    const newShoe: ShoeTried = {
+      id: uuidv4(),
+      model: (data && (data.modelName || data.description)) || '',
+      size: (data && data.size) || '',
+      width: (data && data.width) || 'D',
+      rating: (data && (Number.isInteger(data.rating) ? data.rating : (data.rating ? parseInt(data.rating,10) : 4))) || 4,
+      notes: (data && data.notes) || ''
+    };
+    setShoes((prev) => [...prev, newShoe]);
+    return true;
+  } catch (e) {
+    console.error('Failed to add scanned shoe to state', e);
+    return false;
+  }
+}
 
-          const modelEl = modelInputs[modelInputs.length-1] || modelInputs[0] || null;
-          const sizeEl = sizeInputs[sizeInputs.length-1] || sizeInputs[0] || null;
-          const widthEl = widthSelects[widthSelects.length-1] || widthSelects[0] || null;
-
-          if (modelEl) {
-            modelEl.value = data.modelName || data.description || '';
-            modelEl.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          if (sizeEl) {
-            sizeEl.value = data.size || '';
-            sizeEl.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          if (widthEl) {
-            // Use tagName checks and type assertions to satisfy TypeScript safely
-            const we = widthEl as Element;
-            const tag = (we.tagName || '').toLowerCase();
-            if (tag === 'select') {
-              const sel = widthEl as HTMLSelectElement;
-              const opt = Array.from(sel.options).find(o => (o.text||o.value).trim() === (data.width || '').trim());
-              if (opt) {
-                sel.value = opt.value;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-              } else {
-                sel.value = data.width || sel.value;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-              }
-            } else {
-              // Treat as input-like element (most likely an input)
-              try {
-                const inp = widthEl as unknown as HTMLInputElement;
-                inp.value = data.width || '';
-                inp.dispatchEvent(new Event('input', { bubbles: true }));
-              } catch (e) {
-                // final fallback for unknown element types
-                try {
-                  (widthEl as any).value = data.width || '';
-                  (widthEl as any).dispatchEvent(new Event('input', { bubbles: true }));
-                } catch (ignored) {}
-              }
-            }
-          }
-          return true;
-        }
-        return false;
-      }
 
       input.addEventListener('keydown', async (e: KeyboardEvent) => {
         if ((e as KeyboardEvent).key !== 'Enter') return;
