@@ -131,20 +131,31 @@ export default function FitPage() {
             sizeEl.dispatchEvent(new Event('input', { bubbles: true }));
           }
           if (widthEl) {
-            if (widthEl instanceof HTMLSelectElement) {
-              const opt = Array.from(widthEl.options).find(o => (o.text||o.value).trim() === (data.width || '').trim());
-              if (opt) { widthEl.value = opt.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
-              else { widthEl.value = data.width || widthEl.value; widthEl.dispatchEvent(new Event('change', { bubbles: true })); }
-            } else if (widthEl instanceof HTMLInputElement) {
-              widthEl.value = data.width || '';
-              widthEl.dispatchEvent(new Event('input', { bubbles: true }));
+            // Use tagName checks and type assertions to satisfy TypeScript safely
+            const we = widthEl as Element;
+            const tag = (we.tagName || '').toLowerCase();
+            if (tag === 'select') {
+              const sel = widthEl as HTMLSelectElement;
+              const opt = Array.from(sel.options).find(o => (o.text||o.value).trim() === (data.width || '').trim());
+              if (opt) {
+                sel.value = opt.value;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+              } else {
+                sel.value = data.width || sel.value;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             } else {
-              // fallback for unexpected element types
+              // Treat as input-like element (most likely an input)
               try {
-                (widthEl as any).value = data.width || '';
-                (widthEl as any).dispatchEvent(new Event('input', { bubbles: true }));
+                const inp = widthEl as unknown as HTMLInputElement;
+                inp.value = data.width || '';
+                inp.dispatchEvent(new Event('input', { bubbles: true }));
               } catch (e) {
-                // ignore if cannot set value
+                // final fallback for unknown element types
+                try {
+                  (widthEl as any).value = data.width || '';
+                  (widthEl as any).dispatchEvent(new Event('input', { bubbles: true }));
+                } catch (ignored) {}
               }
             }
           }
