@@ -17,7 +17,7 @@
  * Usage:
  *   DATABASE_URL="file:./dev.db" node scripts/import-optio.js
  * or to specify a test feed:
- *   OPTIO_FEED_URL="https://app.getopt.io/app/api.php?p=udswksyt" DATABASE_URL="file:./dev.db" node scripts/import-optio.js
+ *   OPTIO_FEED_URL="https://app.getopt.io/app/api.php?p=udswksyt&mode=ftw_upc" DATABASE_URL="file:./dev.db" node scripts/import-optio.js
  */
 
 const { PrismaClient } = require('@prisma/client')
@@ -25,7 +25,7 @@ const { parse } = require('csv-parse/sync')
 
 const prisma = new PrismaClient()
 
-const FEED_URL = process.env.OPTIO_FEED_URL || 'https://app.getopt.io/app/api.php?p=udswksyt'
+const FEED_URL = process.env.OPTIO_FEED_URL || 'https://app.getopt.io/app/api.php?p=udswksyt&mode=ftw_upc'
 const MAX_ROWS_LOG = 5
 
 function tryParseJSON(text) {
