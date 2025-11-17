@@ -106,50 +106,72 @@ export default function FitPage() {
       }
 
       async function addShoeToForm(data: any) {
-        try {
-          setShoes((prev) => {
-            const scanned: ShoeTried = {
-              id: uuidv4(),
-              model: (data && (data.modelName || data.description)) || '',
-              size: (data && data.size) || '',
-              width: (data && data.width) || 'D',
-              rating:
-                data && Number.isInteger(data.rating)
-                  ? data.rating
-                  : data && data.rating
-                  ? parseInt(String(data.rating), 10) || 4
-                  : 4,
-              notes: (data && data.notes) || '',
-            }
-
-            // 🔑 Try to reuse the first “empty” row instead of always adding a new one
-            const emptyIndex = prev.findIndex(
-              (sh) =>
-                !sh.model &&
-                !sh.size &&
-                (!sh.notes || sh.notes.trim() === '')
-            )
-
-            if (emptyIndex !== -1) {
-              const updated = [...prev]
-              updated[emptyIndex] = {
-                ...updated[emptyIndex],
-                ...scanned,
-                id: updated[emptyIndex].id, // keep the same React key
-              }
-              return updated
-            }
-
-            // If no empty row, append a new one
-            return [...prev, scanned]
-          })
-
-          return true
-        } catch (e) {
-          console.error('Failed to add scanned shoe to state', e)
-          return false
-        }
+  try {
+    setShoes((prev) => {
+      const scanned: ShoeTried = {
+        id: uuidv4(),
+        model: (data && (data.modelName || data.description)) || '',
+        size: (data && data.size) || '',
+        width: (data && data.width) || 'D',
+        rating:
+          data && Number.isInteger(data.rating)
+            ? data.rating
+            : data && data.rating
+            ? parseInt(String(data.rating), 10) || 4
+            : 4,
+        notes: (data && data.notes) || '',
       }
+
+      let list = [...prev]
+
+      // 1️⃣ Reuse the first empty row if one exists
+      const emptyIndex = list.findIndex(
+        (sh) =>
+          !sh.model &&
+          !sh.size &&
+          (!sh.notes || sh.notes.trim() === '')
+      )
+
+      if (emptyIndex !== -1) {
+        list[emptyIndex] = {
+          ...list[emptyIndex],
+          ...scanned,
+          id: list[emptyIndex].id, // keep same key
+        }
+      } else {
+        // No empty row, just add the scanned shoe
+        list.push(scanned)
+      }
+
+      // 2️⃣ Make sure there is ALWAYS one empty row at the bottom
+      const hasEmpty = list.some(
+        (sh) =>
+          !sh.model &&
+          !sh.size &&
+          (!sh.notes || sh.notes.trim() === '')
+      )
+
+      if (!hasEmpty) {
+        list.push({
+          id: uuidv4(),
+          model: '',
+          size: '',
+          width: 'D',
+          rating: 3,
+          notes: '',
+        })
+      }
+
+      return list
+    })
+
+    return true
+  } catch (e) {
+    console.error('Failed to add scanned shoe to state', e)
+    return false
+  }
+}
+
 
       input.addEventListener('keydown', async (e: KeyboardEvent) => {
         if ((e as KeyboardEvent).key !== 'Enter') return
