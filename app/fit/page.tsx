@@ -72,84 +72,122 @@ export default function FitPage() {
     setShoes((list) => list.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)))
   }
 
-
   useEffect(() => {
     try {
-      const id = '__rrrc_upc_scan';
-      if (document.getElementById(id)) return;
-      const input = document.createElement('input');
-      input.id = id;
-      input.placeholder = 'Scan UPC here';
+      const id = '__rrrc_upc_scan'
+      if (document.getElementById(id)) return
+
+      const input = document.createElement('input')
+      input.id = id
+      input.placeholder = 'Scan UPC here'
       Object.assign(input.style, {
-        position: 'fixed', top: '8px', right: '8px', zIndex: 2147483647,
-        padding: '8px 12px', fontSize: '14px', width: '340px', borderRadius: '6px',
-        border: '1px solid rgba(0,0,0,0.15)', background: '#fff'
-      });
-      document.body.appendChild(input);
-      input.focus();
+        position: 'fixed',
+        top: '8px',
+        right: '8px',
+        zIndex: 2147483647,
+        padding: '8px 12px',
+        fontSize: '14px',
+        width: '340px',
+        borderRadius: '6px',
+        border: '1px solid rgba(0,0,0,0.15)',
+        background: '#fff',
+      })
+      document.body.appendChild(input)
+      input.focus()
 
       async function lookup(upc: string) {
-        const res = await fetch('/api/upc/' + upc);
+        const res = await fetch('/api/upc/' + upc)
         if (!res.ok) {
-          if (res.status === 404) throw { status: 404 };
-          const txt = await res.text().catch(()=>res.statusText);
-          throw new Error('Lookup failed: ' + res.status + ' ' + txt);
+          if (res.status === 404) throw { status: 404 }
+          const txt = await res.text().catch(() => res.statusText)
+          throw new Error('Lookup failed: ' + res.status + ' ' + txt)
         }
-        return res.json();
+        return res.json()
       }
 
-      
-async function addShoeToForm(data: any) {
-  // Add the scanned shoe into React state so controlled inputs render correctly.
-  try {
-    const newShoe: ShoeTried = {
-      id: uuidv4(),
-      model: (data && (data.modelName || data.description)) || '',
-      size: (data && data.size) || '',
-      width: (data && data.width) || 'D',
-      rating: (data && (Number.isInteger(data.rating) ? data.rating : (data.rating ? parseInt(data.rating,10) : 4))) || 4,
-      notes: (data && data.notes) || ''
-    };
-    setShoes((prev) => [...prev, newShoe]);
-    return true;
-  } catch (e) {
-    console.error('Failed to add scanned shoe to state', e);
-    return false;
-  }
-}
+      async function addShoeToForm(data: any) {
+        try {
+          setShoes((prev) => {
+            const scanned: ShoeTried = {
+              id: uuidv4(),
+              model: (data && (data.modelName || data.description)) || '',
+              size: (data && data.size) || '',
+              width: (data && data.width) || 'D',
+              rating:
+                data && Number.isInteger(data.rating)
+                  ? data.rating
+                  : data && data.rating
+                  ? parseInt(String(data.rating), 10) || 4
+                  : 4,
+              notes: (data && data.notes) || '',
+            }
 
+            // 🔑 Try to reuse the first “empty” row instead of always adding a new one
+            const emptyIndex = prev.findIndex(
+              (sh) =>
+                !sh.model &&
+                !sh.size &&
+                (!sh.notes || sh.notes.trim() === '')
+            )
+
+            if (emptyIndex !== -1) {
+              const updated = [...prev]
+              updated[emptyIndex] = {
+                ...updated[emptyIndex],
+                ...scanned,
+                id: updated[emptyIndex].id, // keep the same React key
+              }
+              return updated
+            }
+
+            // If no empty row, append a new one
+            return [...prev, scanned]
+          })
+
+          return true
+        } catch (e) {
+          console.error('Failed to add scanned shoe to state', e)
+          return false
+        }
+      }
 
       input.addEventListener('keydown', async (e: KeyboardEvent) => {
-        if ((e as KeyboardEvent).key !== 'Enter') return;
-        const raw = (input as HTMLInputElement).value || '';
-        const upc = raw.replace(/\\D/g,'');
-        if (!upc) { alert('No digits found'); return; }
-        (input as HTMLInputElement).value = '';
+        if ((e as KeyboardEvent).key !== 'Enter') return
+        const raw = (input as HTMLInputElement).value || ''
+        const upc = raw.replace(/\D/g, '')
+        if (!upc) {
+          alert('No digits found')
+          return
+        }
+        ;(input as HTMLInputElement).value = ''
         try {
-          const data = await lookup(upc);
-          const ok = await addShoeToForm(data);
+          const data = await lookup(upc)
+          const ok = await addShoeToForm(data)
           if (ok) {
-            input.style.background = '#d1fae5';
-            setTimeout(()=> input.style.background = '', 300);
+            input.style.background = '#d1fae5'
+            setTimeout(() => (input.style.background = ''), 300)
           } else {
-            alert('UPC found but auto-fill did not match the page layout.');
+            alert('UPC found but auto-fill did not match the page layout.')
           }
         } catch (err) {
-          if ((err as any).status === 404) alert('UPC not in catalog: ' + upc);
-          else { console.error(err); alert('Lookup error — see console'); }
+          if ((err as any).status === 404) alert('UPC not in catalog: ' + upc)
+          else {
+            console.error(err)
+            alert('Lookup error — see console')
+          }
         }
-      });
+      })
 
       // cleanup when component unmounts
-      // note: FitPage is client-side persistent but we still return cleanup
       return () => {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      };
+        const el = document.getElementById(id)
+        if (el) el.remove()
+      }
     } catch (e) {
-      console.error('Scan init error', e);
+      console.error('Scan init error', e)
     }
-  }, []);
+  }, [])
+
   const filteredCustomers = SAMPLE_CUSTOMERS.filter((c) => {
     const hay = `${c.firstName} ${c.lastName} ${c.phone} ${c.email}`.toLowerCase()
     return hay.includes(customerQuery.trim().toLowerCase())
@@ -210,14 +248,12 @@ async function addShoeToForm(data: any) {
       }
       const data = await res.json()
       setStatusMessage('Saved (id: ' + (data.id || 'unknown') + ')')
-      // clear after a moment
       setTimeout(() => setStatusMessage(null), 3000)
     } catch (err) {
       console.error('Save exception:', err)
       setStatusMessage('Save error — check console.')
     }
   }
-
 
   function resetForm() {
     setShoes([{ id: uuidv4(), model: '', size: '', width: 'D', rating: 3, notes: '' }])
